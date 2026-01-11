@@ -1,0 +1,84 @@
+# Fichiers à ignorer par Cursor (ne pas indexer)
+
+# Configuration sensible
+deploy-config.json
+*.env
+.env.*
+!*.env.example
+!env.example
+
+# Clés et certificats
+*.key
+*.pem
+*.p12
+*.keystore
+*.jks
+*.pfx
+*.crt
+*.cer
+id_rsa
+id_rsa.pub
+*.pub
+*.private
+
+# Base de données
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backups
+backups/
+*.backup
+*.bak
+
+# Releases et builds
+releases/
+*.apk
+*.aab
+build/
+dist/
+out/
+
+# Node modules
+node_modules/
+.npm
+.pnpm-store
+
+# Secrets et tokens
+secrets/
+*.secret
+*.token
+*.password
+
+# SSH
+.ssh/
+known_hosts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Android
+android-app/.gradle/
+android-app/local.properties
+android-app/*.iml
+android-app/build/
+android-app/app/build/
+android-app/captures/
+
