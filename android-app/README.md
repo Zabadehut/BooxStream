@@ -2,6 +2,13 @@
 
 Application Android pour capturer et streamer l'écran d'une tablette Boox vers un serveur WebSocket.
 
+## Documentation de référence
+
+Implémentation basée sur la documentation officielle Android MediaProjection :
+- [Android Developers - MediaProjection (Kotlin)](https://developer.android.com/media/grow/media-projection?hl=fr#kotlin)
+
+Voir `REFERENCES.md` pour plus de détails sur l'implémentation.
+
 ## Prérequis
 
 - Android Studio

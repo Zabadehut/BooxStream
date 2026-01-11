@@ -14,17 +14,26 @@
         android:layout_marginBottom="24dp"/>
 
     <TextView
+        android:id="@+id/deviceUuidText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="URL du serveur WebSocket:"
+        android:text="UUID: ..."
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="URL de l'API web:"
         android:textSize="16sp"
         android:layout_marginBottom="8dp"/>
 
     <EditText
-        android:id="@+id/serverUrlInput"
+        android:id="@+id/apiUrlInput"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="ws://192.168.1.100:8080"
+        android:hint="https://booxstream.kevinvdb.dev"
         android:inputType="textUri"
         android:layout_marginBottom="16dp"/>
 
@@ -52,4 +61,3 @@
         android:textColor="#666666"/>
 
 </LinearLayout>
-

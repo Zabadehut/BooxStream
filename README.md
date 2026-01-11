@@ -1,12 +1,21 @@
 # BooxStream
 
-Système complet de streaming d'écran depuis une tablette Android Boox vers une interface web via un serveur relais WebSocket.
+Système complet de streaming d'écran depuis une tablette Android Boox vers une interface web via un serveur relais WebSocket avec authentification et gestion centralisée.
 
 ## Architecture
 
-- **Application Android** : Capture d'écran et streaming WebSocket
-- **Serveur Rocky Linux 9** : Relais WebSocket entre Android et navigateurs
-- **Interface Web** : Visualisation en temps réel du flux vidéo
+- **Site Web** (booxstream.kevinvdb.dev) : Gestion des hôtes, authentification, création de sessions
+- **Application Android** : Capture d'écran, UUID unique, authentification JWT
+- **Serveur WebSocket** : Relais authentifié entre Android et viewers
+- **Interface Web** : Sélection d'hôte et visualisation en temps réel
+
+## Nouveautés
+
+✅ **Authentification JWT** : Sécurisation des connexions  
+✅ **UUID unique** : Identification unique par appareil Android  
+✅ **Gestion centralisée** : Site web pour gérer les hôtes  
+✅ **Sessions** : Création de sessions temporaires pour les viewers  
+✅ **IP publique** : Détection et enregistrement automatique
 
 ## Structure du projet
 
@@ -15,22 +24,24 @@ Système complet de streaming d'écran depuis une tablette Android Boox vers une
 ├── android-app/          # Application Android
 │   ├── app/
 │   │   ├── build.gradle
-│   │   ├── src/
-│   │   │   └── main/
-│   │   │       ├── AndroidManifest.xml
-│   │   │       ├── java/com/example/booxstreamer/
-│   │   │       │   ├── MainActivity.kt
-│   │   │       │   └── ScreenCaptureService.kt
-│   │   │       └── res/
-│   │   │           └── layout/
-│   │   │               └── activity_main.xml
+│   │   ├── src/main/
+│   │   │   ├── AndroidManifest.xml
+│   │   │   ├── java/com/example/booxstreamer/
+│   │   │   │   ├── MainActivity.kt
+│   │   │   │   ├── ScreenCaptureService.kt
+│   │   │   │   ├── DeviceManager.kt      # Gestion UUID
+│   │   │   │   └── ApiClient.kt          # Client API
+│   │   │   └── res/layout/
+│   │   │       └── activity_main.xml
 │   └── README.md
-├── server/               # Serveur Node.js
-│   ├── server.js
+├── web/                  # Site web et API
+│   ├── server.js         # Serveur Express + WebSocket
 │   ├── package.json
 │   ├── public/
-│   │   └── index.html
+│   │   └── index.html    # Interface de gestion
 │   └── README.md
+├── server/               # Serveur Node.js (legacy)
+│   └── ...
 └── README.md
 ```
 
@@ -48,10 +59,35 @@ Voir `server/README.md` pour les instructions détaillées.
 
 ## Utilisation
 
-1. Démarrer le serveur sur Rocky Linux 9 (IP: 192.168.1.202)
-2. Configurer l'URL du serveur dans l'app Android : `ws://192.168.1.202:8080`
-3. Démarrer le streaming depuis l'app
-4. Ouvrir `http://192.168.1.202:3000` dans un navigateur
+### 1. Démarrer le site web
+
+```bash
+cd web
+npm install
+cp .env.example .env
+# Éditer .env avec vos paramètres
+npm start
+```
+
+### 2. Configurer l'application Android
+
+1. Ouvrir l'app sur la tablette Boox
+2. L'app génère automatiquement un UUID unique
+3. S'enregistre sur le site web (booxstream.kevinvdb.dev)
+4. Reçoit un token JWT d'authentification
+
+### 3. Démarrer le streaming
+
+1. Dans l'app Android, cliquer sur "Démarrer le streaming"
+2. Autoriser la capture d'écran
+3. Le streaming démarre automatiquement
+
+### 4. Visualiser depuis le web
+
+1. Ouvrir https://booxstream.kevinvdb.dev
+2. Voir la liste des hôtes disponibles
+3. Cliquer sur "Voir le stream" pour un hôte
+4. Le stream s'affiche en temps réel
 
 ## Configuration
 

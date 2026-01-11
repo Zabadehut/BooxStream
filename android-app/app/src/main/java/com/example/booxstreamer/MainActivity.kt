@@ -14,13 +14,18 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.net.InetAddress
 
 class MainActivity : AppCompatActivity() {
     
-    private lateinit var serverUrlInput: EditText
     private lateinit var startButton: Button
     private lateinit var stopButton: Button
     private lateinit var statusText: TextView
+    private lateinit var deviceUuidText: TextView
+    private lateinit var apiUrlInput: EditText
+    
+    private lateinit var deviceManager: DeviceManager
+    private lateinit var apiClient: ApiClient
     
     private val PERMISSION_CODE = 1000
     private val NOTIFICATION_PERMISSION_CODE = 1001
@@ -29,13 +34,27 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
-        serverUrlInput = findViewById(R.id.serverUrlInput)
+        // Initialiser les composants
+        deviceManager = DeviceManager(this)
+        val apiUrl = deviceManager.getApiUrl()
+        apiClient = ApiClient(apiUrl)
+        
+        // Récupérer les vues
         startButton = findViewById(R.id.startButton)
         stopButton = findViewById(R.id.stopButton)
         statusText = findViewById(R.id.statusText)
+        deviceUuidText = findViewById(R.id.deviceUuidText)
+        apiUrlInput = findViewById(R.id.apiUrlInput)
         
-        // Valeur par défaut
-        serverUrlInput.setText("ws://192.168.1.100:8080")
+        // Afficher l'UUID de l'appareil
+        val uuid = deviceManager.getDeviceUuid()
+        deviceUuidText.text = "UUID: ${uuid.substring(0, 8)}..."
+        
+        // Configurer l'URL de l'API
+        apiUrlInput.setText(apiUrl)
+        
+        // Enregistrer l'appareil au démarrage
+        registerDevice()
         
         startButton.setOnClickListener {
             checkPermissionsAndStart()
@@ -46,6 +65,53 @@ class MainActivity : AppCompatActivity() {
         }
         
         updateUI(false)
+    }
+    
+    private fun registerDevice() {
+        val uuid = deviceManager.getDeviceUuid()
+        val deviceName = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        
+        // Récupérer l'IP publique (dans un thread séparé)
+        Thread {
+            try {
+                val publicIp = getPublicIp()
+                
+                runOnUiThread {
+                    apiClient.registerHost(uuid, publicIp, deviceName) { result ->
+                        result.onSuccess { response ->
+                            // Sauvegarder le token
+                            deviceManager.saveAuthToken(response.token)
+                            statusText.text = "Enregistré: ${response.host.name}"
+                        }.onFailure { error ->
+                            statusText.text = "Erreur enregistrement: ${error.message}"
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Enregistrer sans IP publique
+                runOnUiThread {
+                    apiClient.registerHost(uuid, null, deviceName) { result ->
+                        result.onSuccess { response ->
+                            deviceManager.saveAuthToken(response.token)
+                            statusText.text = "Enregistré: ${response.host.name}"
+                        }
+                    }
+                }
+            }
+        }.start()
+    }
+    
+    private fun getPublicIp(): String? {
+        return try {
+            // Utiliser un service externe pour obtenir l'IP publique
+            val url = java.net.URL("https://api.ipify.org")
+            val connection = url.openConnection()
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+            connection.getInputStream().bufferedReader().readText().trim()
+        } catch (e: Exception) {
+            null
+        }
     }
     
     private fun checkPermissionsAndStart() {
@@ -73,11 +139,18 @@ class MainActivity : AppCompatActivity() {
         
         if (requestCode == PERMISSION_CODE) {
             if (resultCode == Activity.RESULT_OK && data != null) {
-                val serverUrl = serverUrlInput.text.toString()
+                val token = deviceManager.getAuthToken()
+                val apiUrl = apiUrlInput.text.toString()
                 
-                if (serverUrl.isEmpty()) {
-                    Toast.makeText(this, "Veuillez entrer l'URL du serveur", Toast.LENGTH_SHORT).show()
+                if (token == null) {
+                    Toast.makeText(this, "Erreur: Token d'authentification manquant", Toast.LENGTH_SHORT).show()
+                    registerDevice()
                     return
+                }
+                
+                // Mettre à jour l'URL de l'API si modifiée
+                if (apiUrl != deviceManager.getApiUrl()) {
+                    deviceManager.setApiUrl(apiUrl)
                 }
                 
                 val intent = Intent(this, ScreenCaptureService::class.java).apply {
@@ -88,7 +161,8 @@ class MainActivity : AppCompatActivity() {
                         @Suppress("DEPRECATION")
                         putExtra("data", data)
                     }
-                    putExtra("serverUrl", serverUrl)
+                    putExtra("authToken", token)
+                    putExtra("apiUrl", apiUrl)
                 }
                 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -98,7 +172,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 
                 updateUI(true)
-                statusText.text = "Streaming vers: $serverUrl"
+                statusText.text = "Streaming actif"
             } else {
                 Toast.makeText(this, "Permission refusée", Toast.LENGTH_SHORT).show()
             }
@@ -114,7 +188,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateUI(isRunning: Boolean) {
         startButton.isEnabled = !isRunning
         stopButton.isEnabled = isRunning
-        serverUrlInput.isEnabled = !isRunning
+        apiUrlInput.isEnabled = !isRunning
     }
     
     override fun onRequestPermissionsResult(
@@ -132,4 +206,3 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
-

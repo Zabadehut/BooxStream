@@ -1,5 +1,18 @@
 package com.example.booxstreamer
 
+/**
+ * Service de capture d'écran et streaming WebSocket
+ * 
+ * Implémentation basée sur la documentation officielle Android MediaProjection:
+ * https://developer.android.com/media/grow/media-projection?hl=fr#kotlin
+ * 
+ * Fonctionnalités:
+ * - Capture d'écran via MediaProjection API
+ * - Streaming en temps réel via WebSocket
+ * - Gestion automatique de l'arrêt (callback MediaProjection)
+ * - Service en avant-plan avec notification
+ */
+
 import android.app.*
 import android.app.Activity
 import android.content.Context
@@ -63,9 +76,10 @@ class ScreenCaptureService : Service() {
                 @Suppress("DEPRECATION")
                 it.getParcelableExtra<Intent>("data")
             }
-            val serverUrl = it.getStringExtra("serverUrl") ?: return START_NOT_STICKY
+            val authToken = it.getStringExtra("authToken") ?: return START_NOT_STICKY
+            val apiUrl = it.getStringExtra("apiUrl") ?: return START_NOT_STICKY
             
-            startCapture(resultCode, data, serverUrl)
+            startCapture(resultCode, data, authToken, apiUrl)
         }
         
         return START_NOT_STICKY
@@ -93,9 +107,20 @@ class ScreenCaptureService : Service() {
         screenHeight /= 2
     }
     
-    private fun startCapture(resultCode: Int, data: Intent?, serverUrl: String) {
+    private fun startCapture(resultCode: Int, data: Intent?, authToken: String, apiUrl: String) {
         val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = projectionManager.getMediaProjection(resultCode, data!!)
+        
+        // Enregistrer le callback pour gérer l'arrêt automatique (Android 15+)
+        // Référence: https://developer.android.com/media/grow/media-projection?hl=fr#kotlin
+        mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() {
+                Log.d(TAG, "MediaProjection arrêté (écran verrouillé ou chip barre d'état)")
+                // Libérer les ressources et arrêter le streaming
+                cleanup()
+                updateNotification("Streaming arrêté")
+            }
+        }, handler)
         
         imageReader = ImageReader.newInstance(
             screenWidth, screenHeight, PixelFormat.RGBA_8888, 2
@@ -108,22 +133,56 @@ class ScreenCaptureService : Service() {
             imageReader?.surface, null, null
         )
         
-        connectWebSocket(serverUrl)
+        // Construire l'URL WebSocket depuis l'API URL
+        val wsUrl = apiUrl.replace("https://", "wss://").replace("http://", "ws://")
+            .replace(":3001", ":8080") // Port WebSocket Android
+        
+        connectWebSocket(wsUrl, authToken)
         startFrameCapture()
         
         updateNotification("Streaming actif")
     }
     
-    private fun connectWebSocket(serverUrl: String) {
+    private fun cleanup() {
+        handler.removeCallbacksAndMessages(null)
+        webSocketClient?.close()
+        virtualDisplay?.release()
+        imageReader?.close()
+        mediaProjection?.stop()
+        virtualDisplay = null
+        imageReader = null
+        webSocketClient = null
+    }
+    
+    private fun connectWebSocket(serverUrl: String, authToken: String) {
         try {
             webSocketClient = object : WebSocketClient(URI(serverUrl)) {
                 override fun onOpen(handshakedata: ServerHandshake?) {
-                    Log.d(TAG, "WebSocket connecté")
-                    updateNotification("Connecté au serveur")
+                    Log.d(TAG, "WebSocket connecté, authentification...")
+                    // Envoyer le token d'authentification
+                    send(org.json.JSONObject().apply {
+                        put("type", "auth")
+                        put("token", authToken)
+                    }.toString())
                 }
                 
                 override fun onMessage(message: String?) {
-                    Log.d(TAG, "Message reçu: $message")
+                    try {
+                        val json = org.json.JSONObject(message)
+                        when (json.getString("type")) {
+                            "authenticated" -> {
+                                Log.d(TAG, "Authentifié avec succès")
+                                updateNotification("Connecté et authentifié")
+                            }
+                            "error" -> {
+                                Log.e(TAG, "Erreur authentification: ${json.getString("message")}")
+                                updateNotification("Erreur d'authentification")
+                                cleanup()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.d(TAG, "Message reçu: $message")
+                    }
                 }
                 
                 override fun onClose(code: Int, reason: String?, remote: Boolean) {
@@ -161,7 +220,15 @@ class ScreenCaptureService : Service() {
             
             if (bitmap != null && webSocketClient?.isOpen == true) {
                 val jpegData = bitmapToJpeg(bitmap, 60) // 60% qualité
-                webSocketClient?.send(jpegData)
+                val base64 = android.util.Base64.encodeToString(jpegData, android.util.Base64.NO_WRAP)
+                
+                // Envoyer en JSON avec le type frame
+                val message = org.json.JSONObject().apply {
+                    put("type", "frame")
+                    put("data", base64)
+                }.toString()
+                
+                webSocketClient?.send(message)
                 bitmap.recycle()
             }
         } catch (e: Exception) {
@@ -231,11 +298,7 @@ class ScreenCaptureService : Service() {
     
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacksAndMessages(null)
-        webSocketClient?.close()
-        virtualDisplay?.release()
-        imageReader?.close()
-        mediaProjection?.stop()
+        cleanup()
     }
     
     override fun onBind(intent: Intent?): IBinder? = null
