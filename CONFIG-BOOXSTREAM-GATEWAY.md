@@ -49,30 +49,9 @@ ingress:
 
 ### 2. Redémarrer cloudflared sur le Gateway
 
-**Si cloudflared est dans Docker :**
-
-```bash
-# Vérifier le conteneur
-docker ps --filter "name=cloudflared"
-
-# Redémarrer (selon votre setup)
-docker restart <container_name>
-# OU si docker-compose
-cd /opt/cloudflare && docker-compose restart cloudflared
-```
-
-**Si cloudflared est un service systemd :**
-
 ```bash
 sudo systemctl restart cloudflared
 sudo systemctl status cloudflared
-```
-
-**OU utiliser le script automatique :**
-
-```bash
-chmod +x RESTART-CLOUDFLARE-DOCKER.sh
-./RESTART-CLOUDFLARE-DOCKER.sh
 ```
 
 ## Configuration sur la VM Linux

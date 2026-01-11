@@ -1,8 +1,8 @@
 #!/bin/bash
-# Script pour diagnostiquer et résoudre le conflit de tunnel Cloudflare
+# Script pour vérifier les configurations et détecter les conflits
 
 echo "╔══════════════════════════════════════════════════════════╗"
-echo "║   Diagnostic conflit Cloudflare Tunnel                   ║"
+echo "║   Vérification des configurations                        ║"
 echo "╚══════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -14,82 +14,134 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "PROBLÈME IDENTIFIÉ"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo -e "${RED}⚠ CONFLIT DÉTECTÉ${NC}"
-echo ""
-echo "Vous avez DEUX serveurs qui utilisent le MÊME tunnel Cloudflare:"
-echo "  - Gateway (gère traefik, auth, homepage, etc.)"
-echo "  - VM Linux (gère uniquement booxstream)"
-echo ""
-echo "Quand la VM Linux démarre cloudflared avec seulement:"
-echo "  - booxstream.kevinvdb.dev → localhost:3001"
-echo ""
-echo "Elle écrase la configuration complète du tunnel qui devrait avoir:"
-echo "  - traefik.kevinvdb.dev → ..."
-echo "  - auth.kevinvdb.dev → ..."
-echo "  - homepage.kevinvdb.dev → ..."
-echo "  - booxstream.kevinvdb.dev → ..."
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "SOLUTIONS POSSIBLES"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo -e "${CYAN}Option 1: Désactiver cloudflared sur la VM Linux${NC}"
-echo "  Le tunnel principal (sur le gateway) gère déjà booxstream"
-echo "  → Désactiver le service cloudflared sur cette VM"
-echo ""
-echo -e "${CYAN}Option 2: Synchroniser les configurations${NC}"
-echo "  Les deux serveurs doivent avoir la MÊME config.yml complète"
-echo "  → Ajouter toutes les routes dans ~/.cloudflared/config.yml"
-echo ""
-echo -e "${CYAN}Option 3: Tunnel séparé pour BooxStream${NC}"
-echo "  Créer un nouveau tunnel uniquement pour booxstream"
-echo "  → Plus complexe mais plus isolé"
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "VÉRIFICATION ACTUELLE"
+echo "1. Configuration Cloudflare Tunnel"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Vérifier la config actuelle
+# Config dans /opt/cloudflare/
+if [ -f /opt/cloudflare/config.yml ]; then
+    echo -e "${CYAN}📁 /opt/cloudflare/config.yml${NC}"
+    cat /opt/cloudflare/config.yml
+    echo ""
+else
+    echo -e "${YELLOW}⚠ /opt/cloudflare/config.yml non trouvé${NC}"
+fi
+
+# Config dans ~/.cloudflared/
 if [ -f ~/.cloudflared/config.yml ]; then
-    echo -e "${CYAN}Config actuelle sur cette VM:${NC}"
+    echo -e "${CYAN}📁 ~/.cloudflared/config.yml${NC}"
     cat ~/.cloudflared/config.yml
     echo ""
 else
-    echo -e "${YELLOW}⚠ Pas de config trouvée${NC}"
+    echo -e "${YELLOW}⚠ ~/.cloudflared/config.yml non trouvé${NC}"
 fi
 
-# Vérifier si le service est actif
-if systemctl is-active --quiet cloudflared; then
-    echo -e "${RED}✗ Service cloudflared ACTIF sur cette VM${NC}"
-    echo "  → C'est probablement la cause du conflit!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "2. Configuration Traefik"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+if [ -d /opt/traefik ]; then
+    echo -e "${CYAN}📁 Contenu de /opt/traefik/${NC}"
+    ls -la /opt/traefik/
     echo ""
-    echo "Pour désactiver temporairement:"
-    echo "  sudo systemctl stop cloudflared"
-    echo "  sudo systemctl disable cloudflared"
+    
+    # Chercher docker-compose
+    if [ -f /opt/traefik/docker-compose.yml ]; then
+        echo -e "${CYAN}📄 docker-compose.yml${NC}"
+        cat /opt/traefik/docker-compose.yml
+        echo ""
+    fi
+    
+    # Chercher traefik.yml
+    if [ -f /opt/traefik/traefik.yml ]; then
+        echo -e "${CYAN}📄 traefik.yml${NC}"
+        cat /opt/traefik/traefik.yml
+        echo ""
+    fi
+    
+    # Chercher autres fichiers de config
+    find /opt/traefik -name "*.yml" -o -name "*.yaml" 2>/dev/null | while read f; do
+        if [ "$f" != "/opt/traefik/docker-compose.yml" ] && [ "$f" != "/opt/traefik/traefik.yml" ]; then
+            echo -e "${CYAN}📄 $f${NC}"
+            cat "$f" | head -30
+            echo ""
+        fi
+    done
 else
-    echo -e "${GREEN}✓ Service cloudflared INACTIF sur cette VM${NC}"
+    echo -e "${YELLOW}⚠ /opt/traefik/ non trouvé${NC}"
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "3. Configuration Authentik"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+if [ -d /opt/authentik ]; then
+    echo -e "${CYAN}📁 Contenu de /opt/authentik/${NC}"
+    ls -la /opt/authentik/
+    echo ""
+    
+    # Chercher docker-compose
+    if [ -f /opt/authentik/docker-compose.yml ]; then
+        echo -e "${CYAN}📄 docker-compose.yml${NC}"
+        cat /opt/authentik/docker-compose.yml
+        echo ""
+    fi
+else
+    echo -e "${YELLOW}⚠ /opt/authentik/ non trouvé${NC}"
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "4. Configuration Homepage"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+if [ -d /opt/homepage ]; then
+    echo -e "${CYAN}📁 Contenu de /opt/homepage/${NC}"
+    ls -la /opt/homepage/
+    echo ""
+    
+    # Chercher docker-compose
+    if [ -f /opt/homepage/docker-compose.yml ]; then
+        echo -e "${CYAN}📄 docker-compose.yml${NC}"
+        cat /opt/homepage/docker-compose.yml
+        echo ""
+    fi
+else
+    echo -e "${YELLOW}⚠ /opt/homepage/ non trouvé${NC}"
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "5. Services cloudflared actifs"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+if systemctl is-active --quiet cloudflared; then
+    echo -e "${GREEN}✓ Service cloudflared actif${NC}"
+    systemctl status cloudflared --no-pager -l | head -15
+else
+    echo -e "${RED}✗ Service cloudflared inactif${NC}"
 fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "RECOMMANDATION"
+echo "6. Processus cloudflared en cours"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo -e "${GREEN}→ Option 1 recommandée:${NC}"
-echo "  Le tunnel principal sur votre gateway devrait gérer booxstream"
-echo "  Il suffit d'ajouter la route dans la config du gateway:"
+
+ps aux | grep cloudflared | grep -v grep || echo "Aucun processus cloudflared trouvé"
+
 echo ""
-echo "  Sur votre gateway, ajoutez dans /opt/cloudflare/config.yml:"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Résumé"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "  ingress:"
-echo "    # ... autres routes existantes ..."
-echo "    - hostname: booxstream.kevinvdb.dev"
-echo "      service: http://192.168.1.202:3001"
-echo "    - service: http_status:404"
+echo "Configurations trouvées:"
+[ -f /opt/cloudflare/config.yml ] && echo "  ✓ /opt/cloudflare/config.yml"
+[ -f ~/.cloudflared/config.yml ] && echo "  ✓ ~/.cloudflared/config.yml"
+[ -d /opt/traefik ] && echo "  ✓ /opt/traefik/"
+[ -d /opt/authentik ] && echo "  ✓ /opt/authentik/"
+[ -d /opt/homepage ] && echo "  ✓ /opt/homepage/"
 echo ""
-echo "  Puis désactivez cloudflared sur cette VM Linux."
-echo ""
+
