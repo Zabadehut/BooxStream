@@ -134,8 +134,49 @@ class ScreenCaptureService : Service() {
         )
         
         // Construire l'URL WebSocket depuis l'API URL
-        val wsUrl = apiUrl.replace("https://", "wss://").replace("http://", "ws://")
-            .replace(":3001", ":8080") // Port WebSocket Android
+        // Option 1 : Utiliser le chemin /android-ws sur le même port (compatible Cloudflare Tunnel)
+        // Option 2 : Utiliser le port 8080 directement (si IP publique disponible)
+        
+        var wsUrl = apiUrl.trim()
+        
+        // Remplacer le protocole
+        wsUrl = wsUrl.replace("https://", "wss://").replace("http://", "ws://")
+        
+        // Extraire le host et le port
+        val uri = java.net.URI(wsUrl)
+        val host = uri.host ?: ""
+        val port = if (uri.port != -1) uri.port else {
+            // Port par défaut selon le protocole
+            if (wsUrl.startsWith("wss://")) 443 else 80
+        }
+        
+        // Déterminer si on utilise un domaine ou une IP locale
+        val isLocalIp = host.matches(Regex("^\\d+\\.\\d+\\.\\d+\\.\\d+$"))
+        
+        // Si c'est une IP locale (ex: 192.168.x.x), utiliser le port 8080 directement
+        // Sinon (domaine), utiliser le chemin /android-ws sur le même port (Cloudflare Tunnel)
+        wsUrl = if (isLocalIp) {
+            // IP locale : utiliser le port 8080 directement
+            if (wsUrl.startsWith("wss://")) {
+                "wss://$host:8080"
+            } else {
+                "ws://$host:8080"
+            }
+        } else {
+            // Domaine : utiliser le chemin /android-ws (compatible Cloudflare Tunnel)
+            val baseUrl = if (port != 443 && port != 80) {
+                if (wsUrl.startsWith("wss://")) {
+                    "wss://$host:$port"
+                } else {
+                    "ws://$host:$port"
+                }
+            } else {
+                wsUrl // Garder wss:// ou ws:// sans port explicite
+            }
+            "$baseUrl/android-ws"
+        }
+        
+        Log.d(TAG, "URL WebSocket construite: $wsUrl (depuis API: $apiUrl)")
         
         connectWebSocket(wsUrl, authToken)
         startFrameCapture()
@@ -191,13 +232,24 @@ class ScreenCaptureService : Service() {
                 }
                 
                 override fun onError(ex: Exception?) {
-                    Log.e(TAG, "Erreur WebSocket", ex)
-                    updateNotification("Erreur de connexion")
+                    Log.e(TAG, "Erreur WebSocket: ${ex?.message}", ex)
+                    Log.e(TAG, "URL WebSocket: $serverUrl", ex)
+                    updateNotification("Erreur: ${ex?.message ?: "Connexion impossible"}")
+                    // Nettoyer les ressources en cas d'erreur
+                    handler.post {
+                        cleanup()
+                    }
                 }
             }
+            Log.d(TAG, "Tentative de connexion WebSocket à: $serverUrl")
             webSocketClient?.connect()
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur création WebSocket", e)
+            Log.e(TAG, "Erreur création WebSocket: ${e.message}", e)
+            Log.e(TAG, "URL: $serverUrl", e)
+            updateNotification("Erreur: ${e.message ?: "Impossible de créer la connexion"}")
+            handler.post {
+                cleanup()
+            }
         }
     }
     

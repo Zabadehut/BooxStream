@@ -85,15 +85,49 @@ if [ -d "server" ]; then
     cd ..
 fi
 
+echo "Configuration du service systemd..."
+if [ -f "web/booxstream-web.service" ]; then
+    # Creer le fichier .env si necessaire
+    if [ ! -f "web/.env" ]; then
+        echo "Creation du fichier .env..."
+        # Generer JWT_SECRET (utiliser openssl si disponible, sinon /dev/urandom)
+        if command -v openssl >/dev/null 2>&1; then
+            JWT_SECRET=`$(openssl rand -hex 32)
+        else
+            JWT_SECRET=`$(head -c 32 /dev/urandom | hexdump -ve '1/1 "%.2x"')
+        fi
+        cat > web/.env << EOF
+PORT=3001
+JWT_SECRET=`$JWT_SECRET
+DB_PATH=`$DEPLOY_PATH/web/booxstream.db
+DOMAIN=booxstream.kevinvdb.dev
+EOF
+        echo "Fichier .env cree avec JWT_SECRET genere"
+    fi
+    
+    # Copier le service systemd
+    sudo cp web/booxstream-web.service /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable booxstream-web
+    sudo systemctl restart booxstream-web
+    
+    echo "Service booxstream-web configure et demarre"
+    sudo systemctl status booxstream-web --no-pager -l | head -20
+else
+    echo "ATTENTION: Fichier booxstream-web.service non trouve"
+fi
+
 echo "Deploiement termine!"
 "@
     
     $tempFile = [System.IO.Path]::GetTempFileName() + ".sh"
-    $deployScript | Out-File -FilePath $tempFile -Encoding ASCII -NoNewline
+    # Écrire avec fins de ligne Unix (LF seulement)
+    $deployScript -join "`n" | Out-File -FilePath $tempFile -Encoding ASCII -NoNewline
     
     try {
         scp $tempFile "${serverUser}@${serverHost}:/tmp/deploy.sh"
-        ssh "${serverUser}@${serverHost}" "chmod +x /tmp/deploy.sh && bash /tmp/deploy.sh"
+        # Convertir les fins de ligne sur le serveur avant d'exécuter
+        ssh "${serverUser}@${serverHost}" "dos2unix /tmp/deploy.sh 2>/dev/null || sed -i 's/\r$//' /tmp/deploy.sh; chmod +x /tmp/deploy.sh && bash /tmp/deploy.sh"
         Write-Host "OK: Deploiement serveur termine" -ForegroundColor Green
     } catch {
         Write-Host "ERREUR: $($_.Exception.Message)" -ForegroundColor Red

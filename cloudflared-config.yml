@@ -1,0 +1,11 @@
+tunnel: a40eeeac-5f83-4d51-9da2-67a0c9e0e975
+credentials-file: /home/kvdb/.cloudflared/a40eeeac-5f83-4d51-9da2-67a0c9e0e975.json
+
+ingress:
+  # Interface web + WebSocket (port 3001)
+  - hostname: booxstream.kevinvdb.dev
+    service: http://localhost:3001
+  
+  # Catch-all
+  - service: http_status:404
+

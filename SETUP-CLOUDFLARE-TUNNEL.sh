@@ -18,6 +18,7 @@ if ! command -v cloudflared >/dev/null 2>&1; then
     fi
     sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
     sudo chmod +x /usr/local/bin/cloudflared
+    sudo chown root:root /usr/local/bin/cloudflared
 else
     echo "   cloudflared déjà installé"
 fi

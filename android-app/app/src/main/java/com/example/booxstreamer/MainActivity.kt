@@ -76,8 +76,8 @@ class MainActivity : AppCompatActivity() {
             try {
                 val publicIp = getPublicIp()
                 
-                runOnUiThread {
-                    apiClient.registerHost(uuid, publicIp, deviceName) { result ->
+                apiClient.registerHost(uuid, publicIp, deviceName) { result ->
+                    runOnUiThread {
                         result.onSuccess { response ->
                             // Sauvegarder le token
                             deviceManager.saveAuthToken(response.token)
@@ -89,11 +89,14 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 // Enregistrer sans IP publique
-                runOnUiThread {
-                    apiClient.registerHost(uuid, null, deviceName) { result ->
+                apiClient.registerHost(uuid, null, deviceName) { result ->
+                    runOnUiThread {
                         result.onSuccess { response ->
                             deviceManager.saveAuthToken(response.token)
                             statusText.text = "Enregistré: ${response.host.name}"
+                        }.onFailure { _ ->
+                            // Ignorer silencieusement l'erreur si pas d'IP publique
+                            statusText.text = "Prêt (pas d'IP publique)"
                         }
                     }
                 }

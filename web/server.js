@@ -237,11 +237,29 @@ app.post('/api/sessions/verify', (req, res) => {
     });
 });
 
-// WebSocket pour les connexions Android (port 8080)
-const wssAndroid = new WebSocket.Server({ port: 8080 });
+// WebSocket pour les connexions Android
+// Option 1 : Port séparé 8080 (pour accès direct, sans Cloudflare Tunnel)
+const wssAndroidPort8080 = new WebSocket.Server({ port: 8080 });
 
+// Option 2 : Chemin HTTP WebSocket sur port 3001 (pour Cloudflare Tunnel)
+const wssAndroid = new WebSocket.Server({ 
+    server: server,
+    path: '/android-ws'
+});
+
+// Gestionnaire pour WebSocket Android via chemin HTTP (Cloudflare Tunnel compatible)
 wssAndroid.on('connection', (ws, req) => {
-    console.log('📱 Connexion Android WebSocket');
+    console.log('📱 Connexion Android WebSocket (HTTP)');
+    handleAndroidConnection(ws);
+});
+
+// Gestionnaire pour WebSocket Android via port 8080 (accès direct)
+wssAndroidPort8080.on('connection', (ws, req) => {
+    console.log('📱 Connexion Android WebSocket (port 8080)');
+    handleAndroidConnection(ws);
+});
+
+function handleAndroidConnection(ws) {
     
     let hostUuid = null;
     let authenticated = false;
@@ -280,7 +298,7 @@ wssAndroid.on('connection', (ws, req) => {
     ws.on('close', () => {
         console.log(`📱 Hôte déconnecté: ${hostUuid || 'non authentifié'}`);
     });
-});
+}
 
 // WebSocket pour les viewers (via le serveur HTTP)
 const wssViewers = new WebSocket.Server({ server });
@@ -357,7 +375,7 @@ server.listen(PORT, () => {
 ║   BooxStream Web Server démarré!      ║
 ╠════════════════════════════════════════╣
 ║ 🌐 API Web: http://localhost:${PORT}      ║
-║ 📱 Android WebSocket: port 8080        ║
+║ 📱 Android WebSocket: /android-ws (port ${PORT}) ou port 8080 ║
 ║ 👁️  Viewer WebSocket: port ${PORT}        ║
 ╚════════════════════════════════════════╝
     `);

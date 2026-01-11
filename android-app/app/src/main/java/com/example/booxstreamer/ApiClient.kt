@@ -40,14 +40,20 @@ class ApiClient(private val apiUrl: String) {
             "name" to name
         )).toRequestBody(jsonMediaType)
         
+        val registerUrl = "$apiUrl/api/hosts/register"
+        Log.d(TAG, "Tentative d'enregistrement hôte: $registerUrl")
+        Log.d(TAG, "Donnees: uuid=$uuid, name=$name, public_ip=$publicIp")
+        
         val request = Request.Builder()
-            .url("$apiUrl/api/hosts/register")
+            .url(registerUrl)
             .post(requestBody)
             .build()
         
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "Erreur enregistrement hôte", e)
+                Log.e(TAG, "Erreur enregistrement hôte: ${e.message}", e)
+                Log.e(TAG, "URL: $apiUrl/api/hosts/register", e)
+                Log.e(TAG, "Exception type: ${e.javaClass.simpleName}", e)
                 callback(Result.failure(e))
             }
             
@@ -58,6 +64,8 @@ class ApiClient(private val apiUrl: String) {
                         val registration = gson.fromJson(body, HostRegistrationResponse::class.java)
                         callback(Result.success(registration))
                     } else {
+                        Log.e(TAG, "Erreur HTTP ${response.code}: $body")
+                        Log.e(TAG, "URL: $apiUrl/api/hosts/register")
                         callback(Result.failure(Exception("Erreur HTTP ${response.code}: $body")))
                     }
                 } catch (e: Exception) {
