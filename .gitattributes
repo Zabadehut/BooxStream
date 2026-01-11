@@ -1,0 +1,18 @@
+# Gestion automatique des fins de ligne
+* text=auto
+
+# Scripts shell doivent avoir LF
+*.sh text eol=lf
+
+# Scripts PowerShell peuvent avoir CRLF
+*.ps1 text eol=crlf
+
+# Fichiers binaires
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.apk binary
+*.aar binary
+

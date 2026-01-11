@@ -34,3 +34,7 @@ desktop.ini
 # Logs
 *.log
 
+# Déploiement
+backups/
+deploy-config.json
+

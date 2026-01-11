@@ -48,10 +48,10 @@ Voir `server/README.md` pour les instructions détaillées.
 
 ## Utilisation
 
-1. Démarrer le serveur sur Rocky Linux 9
-2. Configurer l'URL du serveur dans l'app Android (ex: `ws://192.168.1.100:8080`)
+1. Démarrer le serveur sur Rocky Linux 9 (IP: 192.168.1.202)
+2. Configurer l'URL du serveur dans l'app Android : `ws://192.168.1.202:8080`
 3. Démarrer le streaming depuis l'app
-4. Ouvrir `http://IP_SERVEUR:3000` dans un navigateur
+4. Ouvrir `http://192.168.1.202:3000` dans un navigateur
 
 ## Configuration
 
@@ -59,4 +59,67 @@ Voir `server/README.md` pour les instructions détaillées.
 - **Qualité JPEG** : 60% (modifiable dans `ScreenCaptureService.kt`)
 - **Port Android WebSocket** : 8080
 - **Port Interface Web** : 3000
+
+## Déploiement
+
+### Configuration initiale
+
+1. **Configurer le déploiement** : Éditez `deploy-config.json` avec vos paramètres :
+   ```json
+   {
+     "server": {
+       "host": "192.168.1.202",
+       "user": "votre_utilisateur",
+       "deployPath": "/opt/booxstream"
+     },
+     "git": {
+       "remote": "origin",
+       "branch": "main"
+     }
+   }
+   ```
+
+2. **Premier déploiement sur le serveur** :
+   ```bash
+   # Sur le serveur Rocky Linux
+   sudo mkdir -p /opt/booxstream
+   sudo chown votre_utilisateur:votre_utilisateur /opt/booxstream
+   git clone https://github.com/Zabadehut/BooxStream.git /opt/booxstream
+   cd /opt/booxstream/server
+   npm install
+   ```
+
+### Scripts de déploiement (Windows)
+
+- **`deploy.ps1`** : Déploie vers GitHub et le serveur
+  ```powershell
+  .\deploy.ps1              # Déploie tout
+  .\deploy.ps1 -GitOnly      # Push GitHub uniquement
+  .\deploy.ps1 -ServerOnly   # Serveur uniquement
+  ```
+
+- **`restore.ps1`** : Restaure depuis GitHub ou une sauvegarde
+  ```powershell
+  .\restore.ps1 -From git              # Restaure depuis GitHub
+  .\restore.ps1 -From backup -BackupPath backup.zip
+  ```
+
+- **`backup.ps1`** : Crée une sauvegarde locale
+  ```powershell
+  .\backup.ps1
+  ```
+
+### Scripts serveur (Rocky Linux)
+
+- **`server/deploy-server.sh`** : Déploie après un git pull
+  ```bash
+  cd /opt/booxstream
+  git pull
+  ./server/deploy-server.sh
+  ```
+
+- **`server/restore-server.sh`** : Restaure depuis GitHub
+  ```bash
+  ./server/restore-server.sh
+  ```
 
