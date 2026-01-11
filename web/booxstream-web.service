@@ -1,0 +1,18 @@
+[Unit]
+Description=BooxStream Web Server
+After=network.target
+
+[Service]
+Type=simple
+User=kvdb
+WorkingDirectory=/opt/booxstream/web
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
