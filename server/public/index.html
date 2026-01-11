@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BooxStream Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .status-bar {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background: #28a745;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .info {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .screen-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            min-height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #screen {
+            max-width: 100%;
+            max-height: 800px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .placeholder {
+            text-align: center;
+            color: #999;
+            padding: 60px 20px;
+        }
+        
+        .placeholder svg {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .stats {
+            margin-top: 20px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 BooxStream Viewer</h1>
+        
+        <div class="status-bar">
+            <div class="status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Déconnecté</span>
+            </div>
+            <div class="info" id="resolution">En attente...</div>
+        </div>
+        
+        <div class="screen-container">
+            <img id="screen" style="display: none;" alt="Screen">
+            <div class="placeholder" id="placeholder">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 12H3V4h18v10z"/>
+                </svg>
+                <h2>En attente de connexion</h2>
+                <p>Démarrez le streaming depuis votre tablette Boox</p>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="fps">0</div>
+                <div class="stat-label">FPS</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="latency">0ms</div>
+                <div class="stat-label">Latence</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="bandwidth">0 KB/s</div>
+                <div class="stat-label">Bande passante</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Utiliser le même port que le serveur HTTP pour le WebSocket web
+        const wsPort = window.location.port || '3000';
+        const ws = new WebSocket(`ws://${window.location.hostname}:${wsPort}`);
+        const screen = document.getElementById('screen');
+        const placeholder = document.getElementById('placeholder');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const resolutionText = document.getElementById('resolution');
+        const fpsDisplay = document.getElementById('fps');
+        const latencyDisplay = document.getElementById('latency');
+        const bandwidthDisplay = document.getElementById('bandwidth');
+        
+        let frameCount = 0;
+        let lastSecond = Date.now();
+        let currentFps = 0;
+        let lastFrameTime = Date.now();
+        let bytesReceived = 0;
+        
+        ws.onopen = () => {
+            console.log('✅ Connecté au serveur');
+        };
+        
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            
+            if (message.type === 'status') {
+                updateStatus(message.connected);
+            } else if (message.type === 'frame') {
+                updateFrame(message.data);
+            }
+        };
+        
+        ws.onerror = (error) => {
+            console.error('❌ Erreur WebSocket:', error);
+            statusText.textContent = 'Erreur de connexion';
+        };
+        
+        ws.onclose = () => {
+            console.log('🔌 Déconnecté');
+            updateStatus(false);
+        };
+        
+        function updateStatus(connected) {
+            if (connected) {
+                statusDot.classList.add('connected');
+                statusText.textContent = 'Tablette connectée';
+            } else {
+                statusDot.classList.remove('connected');
+                statusText.textContent = 'Déconnecté';
+                screen.style.display = 'none';
+                placeholder.style.display = 'block';
+            }
+        }
+        
+        function updateFrame(base64Data) {
+            bytesReceived += base64Data.length;
+            screen.src = 'data:image/jpeg;base64,' + base64Data;
+            screen.style.display = 'block';
+            placeholder.style.display = 'none';
+            
+            // Calculer FPS
+            frameCount++;
+            const now = Date.now();
+            const latency = now - lastFrameTime;
+            lastFrameTime = now;
+            
+            if (now - lastSecond >= 1000) {
+                currentFps = frameCount;
+                frameCount = 0;
+                lastSecond = now;
+                
+                // Calculer bande passante
+                const bandwidth = (bytesReceived / 1024).toFixed(1);
+                bandwidthDisplay.textContent = bandwidth + ' KB/s';
+                bytesReceived = 0;
+            }
+            
+            fpsDisplay.textContent = currentFps;
+            latencyDisplay.textContent = latency + 'ms';
+        }
+        
+        screen.onload = () => {
+            resolutionText.textContent = `${screen.naturalWidth} × ${screen.naturalHeight}`;
+        };
+    </script>
+</body>
+</html>
+
