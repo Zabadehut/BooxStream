@@ -1,5 +1,18 @@
 # Guide de déploiement BooxStream
 
+## ⚠️ Éviter de taper la passphrase plusieurs fois
+
+Si votre clé SSH a une passphrase, vous devrez la taper plusieurs fois (une fois par commande SSH/SCP).
+
+**Solution : Utiliser ssh-agent** (une seule fois par session) :
+
+```powershell
+# Configurer ssh-agent (à faire une fois par session PowerShell)
+.\setup-ssh-agent.ps1
+```
+
+Cela mémorisera votre passphrase pour toute la session. Vous n'aurez plus qu'à la taper **UNE SEULE FOIS**.
+
 ## Scripts disponibles
 
 ### 🚀 `deploy-prod.ps1` (RECOMMANDÉ)

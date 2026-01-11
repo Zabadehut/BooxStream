@@ -25,6 +25,18 @@ Write-Host "  DEPLOIEMENT PRODUCTION BOOXSTREAM" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Vérifier si ssh-agent a des clés chargées
+$sshAddList = ssh-add -l 2>&1
+if ($LASTEXITCODE -ne 0 -or $sshAddList -match "Could not open a connection") {
+    Write-Host "⚠️  ssh-agent non configuré" -ForegroundColor Yellow
+    Write-Host "💡 Exécutez d'abord: .\setup-ssh-agent.ps1" -ForegroundColor Yellow
+    Write-Host "   Cela évitera de taper votre passphrase plusieurs fois" -ForegroundColor Yellow
+    Write-Host ""
+    $continue = Read-Host "Continuer quand même? (y/n)"
+    if ($continue -ne "y") { exit 0 }
+    Write-Host ""
+}
+
 # 1. Push vers GitHub
 if (-not $SkipGit) {
     Write-Host "[1/4] Push vers GitHub..." -ForegroundColor Yellow
@@ -213,4 +225,3 @@ Write-Host "Acces:" -ForegroundColor Yellow
 Write-Host "  Web: http://${serverHost}:3001" -ForegroundColor White
 Write-Host "  Logs: ssh ${serverUser}@${serverHost} 'sudo journalctl -u booxstream-web -f'" -ForegroundColor White
 Write-Host ""
-
