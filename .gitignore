@@ -34,6 +34,13 @@ desktop.ini
 # Logs
 *.log
 
+# Releases APK
+releases/
+*.apk
+*.aab
+android-app/*.keystore
+android-app/app/release/
+
 # Déploiement
 backups/
 deploy-config.json
