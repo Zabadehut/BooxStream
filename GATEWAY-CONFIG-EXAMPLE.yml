@@ -1,0 +1,30 @@
+# Exemple de configuration Cloudflare Tunnel pour le GATEWAY
+# Fichier: /opt/cloudflare/config.yml (sur votre gateway)
+
+tunnel: a40eeeac-5f83-4d51-9da2-67a0c9e0e975
+credentials-file: /etc/cloudflared/a40eeeac-5f83-4d51-9da2-67a0c9e0e975.json
+
+ingress:
+  # Traefik (sur le gateway)
+  - hostname: traefik.kevinvdb.dev
+    service: http://localhost:8080
+  
+  # Authentik (sur le gateway)
+  - hostname: auth.kevinvdb.dev
+    service: http://localhost:9000
+  
+  # Homepage (sur le gateway)
+  - hostname: homepage.kevinvdb.dev
+    service: http://localhost:3000
+  
+  # BooxStream (sur la VM Linux 192.168.1.202)
+  - hostname: booxstream.kevinvdb.dev
+    service: http://192.168.1.202:3001
+  
+  # Autres services si nécessaire...
+  # - hostname: autre-service.kevinvdb.dev
+  #   service: http://192.168.1.XXX:PORT
+  
+  # Catch-all (DOIT être en dernier)
+  - service: http_status:404
+
