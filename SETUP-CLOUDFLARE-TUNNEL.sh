@@ -4,36 +4,82 @@
 
 set -e
 
-echo "=== Installation Cloudflare Tunnel pour BooxStream ==="
+echo "=== Configuration Cloudflare Tunnel pour BooxStream ==="
 echo ""
 
-# 1. Installer cloudflared
-echo "1. Installation de cloudflared..."
-cd /tmp
-if [ ! -f "cloudflared-linux-amd64" ]; then
-    wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+# 1. Installer cloudflared (si pas déjà installé)
+echo "1. Vérification de cloudflared..."
+if ! command -v cloudflared >/dev/null 2>&1; then
+    echo "   Installation de cloudflared..."
+    cd /tmp
+    if [ ! -f "cloudflared-linux-amd64" ]; then
+        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+    fi
+    sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
+    sudo chmod +x /usr/local/bin/cloudflared
+else
+    echo "   cloudflared déjà installé"
 fi
-sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
-sudo chmod +x /usr/local/bin/cloudflared
 
-echo "   Version installée:"
+echo "   Version:"
 cloudflared --version
 echo ""
 
-# 2. Authentifier
-echo "2. Authentification Cloudflare..."
-echo "   Une fenêtre de navigateur va s'ouvrir pour vous connecter."
-cloudflared tunnel login
+# 2. Authentifier (si pas déjà authentifié)
+echo "2. Vérification de l'authentification..."
+if [ ! -f ~/.cloudflared/cert.pem ]; then
+    echo "   Authentification Cloudflare..."
+    echo "   Une fenêtre de navigateur va s'ouvrir pour vous connecter."
+    cloudflared tunnel login
+else
+    echo "   Déjà authentifié"
+fi
 echo ""
 
-# 3. Créer le tunnel
-echo "3. Création du tunnel..."
-TUNNEL_NAME="booxstream"
-cloudflared tunnel create $TUNNEL_NAME
+# 3. Utiliser le tunnel existant ou permettre la sélection
+echo "3. Sélection du tunnel..."
 
-# Récupérer le Tunnel ID
-TUNNEL_ID=$(cloudflared tunnel list | grep $TUNNEL_NAME | awk '{print $1}')
-echo "   Tunnel ID: $TUNNEL_ID"
+# Tunnel ID existant (peut être modifié)
+EXISTING_TUNNEL_ID="a40eeeac-5f83-4d51-9da2-67a0c9e0e975"
+
+# Vérifier si le tunnel existe
+TUNNEL_EXISTS=$(cloudflared tunnel list 2>/dev/null | grep -q "$EXISTING_TUNNEL_ID" && echo "yes" || echo "no")
+
+if [ "$TUNNEL_EXISTS" = "yes" ]; then
+    echo "   Utilisation du tunnel existant: $EXISTING_TUNNEL_ID"
+    TUNNEL_ID="$EXISTING_TUNNEL_ID"
+    TUNNEL_NAME=$(cloudflared tunnel list 2>/dev/null | grep "$EXISTING_TUNNEL_ID" | awk '{print $2}')
+    if [ -z "$TUNNEL_NAME" ]; then
+        TUNNEL_NAME="booxstream"
+    fi
+else
+    echo "   Tunnel $EXISTING_TUNNEL_ID non trouvé."
+    echo "   Liste des tunnels disponibles:"
+    TUNNELS=$(cloudflared tunnel list 2>/dev/null | tail -n +2 || echo "")
+    
+    if [ -z "$TUNNELS" ]; then
+        echo "   Aucun tunnel trouvé. Création d'un nouveau tunnel..."
+        TUNNEL_NAME="booxstream"
+        cloudflared tunnel create $TUNNEL_NAME
+        TUNNEL_ID=$(cloudflared tunnel list | grep $TUNNEL_NAME | awk '{print $1}')
+    else
+        echo "$TUNNELS" | nl -w2 -s'. '
+        echo ""
+        read -p "   Utiliser un tunnel existant? (numéro) ou 'n' pour créer un nouveau: " TUNNEL_CHOICE
+        
+        if [ "$TUNNEL_CHOICE" = "n" ] || [ -z "$TUNNEL_CHOICE" ]; then
+            echo "   Création d'un nouveau tunnel..."
+            TUNNEL_NAME="booxstream"
+            cloudflared tunnel create $TUNNEL_NAME
+            TUNNEL_ID=$(cloudflared tunnel list | grep $TUNNEL_NAME | awk '{print $1}')
+        else
+            TUNNEL_ID=$(echo "$TUNNELS" | sed -n "${TUNNEL_CHOICE}p" | awk '{print $1}')
+            TUNNEL_NAME=$(echo "$TUNNELS" | sed -n "${TUNNEL_CHOICE}p" | awk '{print $2}')
+        fi
+    fi
+fi
+
+echo "   Tunnel sélectionné: $TUNNEL_NAME (ID: $TUNNEL_ID)"
 echo ""
 
 # 4. Créer la configuration
@@ -58,7 +104,12 @@ echo ""
 
 # 5. Configurer le DNS
 echo "5. Configuration DNS..."
-cloudflared tunnel route dns $TUNNEL_NAME booxstream.kevinvdb.dev
+# Utiliser le nom du tunnel ou l'ID si le nom n'est pas disponible
+DNS_TUNNEL_ID=${TUNNEL_NAME:-$TUNNEL_ID}
+cloudflared tunnel route dns $DNS_TUNNEL_ID booxstream.kevinvdb.dev 2>/dev/null || {
+    echo "   Note: La route DNS existe peut-être déjà. Vérification..."
+    cloudflared tunnel route dns list | grep booxstream.kevinvdb.dev || echo "   Route DNS à configurer manuellement si nécessaire"
+}
 echo "   DNS configuré pour booxstream.kevinvdb.dev"
 echo ""
 
