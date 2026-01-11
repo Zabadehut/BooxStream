@@ -82,57 +82,32 @@ if (-not $SkipServer -and -not $GitOnly) {
     
     Write-Host "📡 Connexion à $serverUser@$serverHost..." -ForegroundColor Yellow
     
-    # Créer le script de déploiement temporaire
-    $deployScript = @"
-#!/bin/bash
-set -e
-
-DEPLOY_PATH="$deployPath"
-REPO_URL="https://github.com/Zabadehut/BooxStream.git"
-BRANCH="$($config.git.branch)"
-
-echo "📥 Clonage/Mise à jour du dépôt..."
-if [ -d "`$DEPLOY_PATH" ]; then
-    cd "`$DEPLOY_PATH"
-    git fetch origin
-    git reset --hard origin/`$BRANCH
-    git clean -fd
-else
-    mkdir -p "`$(dirname "`$DEPLOY_PATH")"
-    git clone -b "`$BRANCH" "`$REPO_URL" "`$DEPLOY_PATH"
-    cd "`$DEPLOY_PATH"
-fi
-
-echo "📦 Installation des dépendances..."
-cd server
-npm install --production
-
-echo "🔄 Redémarrage du service..."
-sudo systemctl restart booxstream || echo "⚠️  Service non configuré, démarrage manuel requis"
-
-echo "✅ Déploiement terminé!"
-"@
+    $branch = $config.git.branch
     
-    $tempScript = [System.IO.Path]::GetTempFileName() + ".sh"
-    $deployScript | Out-File -FilePath $tempScript -Encoding UTF8
+    # Exécuter les commandes directement via SSH
+    $sshCommands = @(
+        "cd $deployPath || (mkdir -p $(Split-Path $deployPath -Parent) && git clone -b $branch https://github.com/Zabadehut/BooxStream.git $deployPath && cd $deployPath)",
+        "cd $deployPath",
+        "git fetch origin",
+        "git reset --hard origin/$branch",
+        "git clean -fd",
+        "cd server",
+        "npm install --production",
+        "sudo systemctl restart booxstream || echo 'Service non configuré'"
+    ) -join " && "
     
     try {
-        # Copier le script sur le serveur et l'exécuter
-        scp $tempScript "${serverUser}@${serverHost}:/tmp/deploy-booxstream.sh"
-        ssh "${serverUser}@${serverHost}" "chmod +x /tmp/deploy-booxstream.sh && /tmp/deploy-booxstream.sh"
-        
+        ssh "${serverUser}@${serverHost}" $sshCommands
         Write-Host "✅ Déploiement serveur terminé" -ForegroundColor Green
-    } catch {
+    }
+    catch {
         Write-Host "❌ Erreur déploiement serveur: $_" -ForegroundColor Red
         Write-Host "💡 Vérifiez:" -ForegroundColor Yellow
         Write-Host "   - Connexion SSH fonctionnelle" -ForegroundColor Yellow
         Write-Host "   - Clé SSH configurée" -ForegroundColor Yellow
         Write-Host "   - Permissions sudo sur le serveur" -ForegroundColor Yellow
-    } finally {
-        Remove-Item $tempScript -ErrorAction SilentlyContinue
     }
 }
 
 Write-Host ""
 Write-Host "✨ Déploiement terminé!" -ForegroundColor Green
-
