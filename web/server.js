@@ -369,12 +369,12 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔════════════════════════════════════════╗
 ║   BooxStream Web Server démarré!      ║
 ╠════════════════════════════════════════╣
-║ 🌐 API Web: http://localhost:${PORT}      ║
+║ 🌐 API Web: http://0.0.0.0:${PORT}      ║
 ║ 📱 Android WebSocket: /android-ws (port ${PORT}) ou port 8080 ║
 ║ 👁️  Viewer WebSocket: port ${PORT}        ║
 ╚════════════════════════════════════════╝
