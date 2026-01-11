@@ -40,8 +40,9 @@ echo ""
 # 3. Utiliser le tunnel existant
 echo "3. Sélection du tunnel..."
 
-# Tunnel ID existant
-EXISTING_TUNNEL_ID="a40eeeac-5f83-4d51-9da2-67a0c9e0e975"
+# Tunnel ID existant (gateway-tunnel)
+EXISTING_TUNNEL_ID="491bddf7-fbfa-4f8e-8e1f-417dccee4c17"
+EXISTING_TUNNEL_NAME="gateway-tunnel"
 
 # Lister tous les tunnels disponibles
 echo "   Recherche des tunnels disponibles..."
@@ -60,7 +61,7 @@ if [ -n "$TUNNEL_INFO" ]; then
     TUNNEL_ID="$EXISTING_TUNNEL_ID"
     TUNNEL_NAME=$(echo "$TUNNEL_INFO" | awk '{print $2}')
     if [ -z "$TUNNEL_NAME" ] || [ "$TUNNEL_NAME" = "$EXISTING_TUNNEL_ID" ]; then
-        TUNNEL_NAME="booxstream"
+        TUNNEL_NAME="$EXISTING_TUNNEL_NAME"
     fi
     echo "   Nom du tunnel: $TUNNEL_NAME"
 else
@@ -68,11 +69,19 @@ else
     echo "   Tunnels disponibles:"
     echo "$TUNNEL_LIST" | tail -n +2 | nl -w2 -s'. '
     echo ""
-    echo "   Utilisation du premier tunnel disponible..."
-    TUNNEL_ID=$(echo "$TUNNEL_LIST" | tail -n +2 | head -1 | awk '{print $1}')
-    TUNNEL_NAME=$(echo "$TUNNEL_LIST" | tail -n +2 | head -1 | awk '{print $2}')
+    # Chercher gateway-tunnel en priorité
+    GATEWAY_TUNNEL=$(echo "$TUNNEL_LIST" | grep -i "gateway" || echo "")
+    if [ -n "$GATEWAY_TUNNEL" ]; then
+        echo "   Utilisation du tunnel gateway-tunnel trouvé..."
+        TUNNEL_ID=$(echo "$GATEWAY_TUNNEL" | awk '{print $1}')
+        TUNNEL_NAME=$(echo "$GATEWAY_TUNNEL" | awk '{print $2}')
+    else
+        echo "   Utilisation du premier tunnel disponible..."
+        TUNNEL_ID=$(echo "$TUNNEL_LIST" | tail -n +2 | head -1 | awk '{print $1}')
+        TUNNEL_NAME=$(echo "$TUNNEL_LIST" | tail -n +2 | head -1 | awk '{print $2}')
+    fi
     if [ -z "$TUNNEL_NAME" ] || [ "$TUNNEL_NAME" = "$TUNNEL_ID" ]; then
-        TUNNEL_NAME="booxstream"
+        TUNNEL_NAME="gateway-tunnel"
     fi
     echo "   Tunnel sélectionné: $TUNNEL_NAME (ID: $TUNNEL_ID)"
 fi
