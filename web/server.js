@@ -242,10 +242,11 @@ app.post('/api/sessions/verify', (req, res) => {
 const wssAndroidPort8080 = new WebSocket.Server({ port: 8080 });
 
 // Option 2 : Chemin HTTP WebSocket sur port 3001 (pour Cloudflare Tunnel)
-const wssAndroid = new WebSocket.Server({ 
-    server: server,
-    path: '/android-ws'
-});
+// Créer le serveur WebSocket sans path pour gérer manuellement l'upgrade
+const wssAndroid = new WebSocket.Server({ noServer: true });
+
+// WebSocket pour les viewers (via le serveur HTTP)
+const wssViewers = new WebSocket.Server({ noServer: true });
 
 // Gestionnaire pour WebSocket Android via chemin HTTP (Cloudflare Tunnel compatible)
 wssAndroid.on('connection', (ws, req) => {
@@ -257,6 +258,20 @@ wssAndroid.on('connection', (ws, req) => {
 wssAndroidPort8080.on('connection', (ws, req) => {
     console.log('📱 Connexion Android WebSocket (port 8080)');
     handleAndroidConnection(ws);
+});
+
+// Gérer l'upgrade HTTP vers WebSocket pour /android-ws (nécessaire pour Traefik)
+server.on('upgrade', (request, socket, head) => {
+    if (request.url === '/android-ws') {
+        wssAndroid.handleUpgrade(request, socket, head, (ws) => {
+            wssAndroid.emit('connection', ws, request);
+        });
+    } else {
+        // Pour les autres connexions WebSocket (viewers), utiliser le serveur par défaut
+        wssViewers.handleUpgrade(request, socket, head, (ws) => {
+            wssViewers.emit('connection', ws, request);
+        });
+    }
 });
 
 function handleAndroidConnection(ws) {
@@ -300,8 +315,7 @@ function handleAndroidConnection(ws) {
     });
 }
 
-// WebSocket pour les viewers (via le serveur HTTP)
-const wssViewers = new WebSocket.Server({ server });
+// wssViewers est maintenant créé plus haut avec noServer: true
 
 const viewers = new Map(); // host_uuid -> Set of WebSocket connections
 

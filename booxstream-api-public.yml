@@ -1,0 +1,26 @@
+http:
+  routers:
+    # Route publique pour l'API mobile (sans Authentik)
+    booxstream-api:
+      rule: "Host(`booxstream.kevinvdb.dev`) && PathPrefix(`/api/`)"
+      entrypoints:
+        - web
+      service: booxstream-backend
+      priority: 10  # Priorité plus haute que la route principale
+
+    # Route principale avec Authentik (interface web)
+    booxstream:
+      rule: "Host(`booxstream.kevinvdb.dev`)"
+      entrypoints:
+        - web
+      middlewares:
+        - authentik-forward-auth
+      service: booxstream-backend
+      priority: 1  # Priorité plus basse
+
+  services:
+    booxstream-backend:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.202:3001"
+
