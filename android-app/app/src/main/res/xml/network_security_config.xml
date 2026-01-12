@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Configuration de sécurité réseau pour BooxStream -->
+    
+    <!-- Autoriser uniquement les connexions HTTPS par défaut -->
+    <base-config cleartextTrafficAllowed="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Autoriser les connexions locales en clair (pour développement) -->
+    <domain-config cleartextTrafficAllowed="true">
+        <!-- Réseau local uniquement -->
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.0.0</domain>
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">172.16.0.0</domain>
+    </domain-config>
+    
+    <!-- Autoriser uniquement api.ipify.org pour obtenir l'IP publique -->
+    <domain-config cleartextTrafficAllowed="false">
+        <domain includeSubdomains="true">api.ipify.org</domain>
+        <domain includeSubdomains="true">ipify.org</domain>
+    </domain-config>
+    
+    <!-- Autoriser le domaine BooxStream -->
+    <domain-config cleartextTrafficAllowed="false">
+        <domain includeSubdomains="true">booxstream.kevinvdb.dev</domain>
+    </domain-config>
+</network-security-config>

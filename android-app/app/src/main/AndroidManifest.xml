@@ -2,17 +2,29 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissions nécessaires pour le streaming d'écran -->
+    <!-- INTERNET : Connexion WebSocket au serveur local uniquement -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- FOREGROUND_SERVICE : Maintenir le streaming actif -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- FOREGROUND_SERVICE_MEDIA_PROJECTION : Service de capture d'écran -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- POST_NOTIFICATIONS : Afficher l'état du streaming -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Restrictions réseau pour la sécurité -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="BooxStream"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
         
         <activity

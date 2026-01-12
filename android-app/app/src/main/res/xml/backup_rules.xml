@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Désactiver la sauvegarde pour la sécurité -->
+    <!-- BooxStream ne nécessite pas de sauvegarde car toutes les données sont locales -->
+</full-backup-content>

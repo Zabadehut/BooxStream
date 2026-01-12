@@ -93,6 +93,8 @@ class ScreenCaptureService : Service() {
             val bounds = windowManager.currentWindowMetrics.bounds
             screenWidth = bounds.width()
             screenHeight = bounds.height()
+            // Récupérer aussi les métriques pour la densité
+            windowManager.defaultDisplay.getMetrics(metrics)
         } else {
             @Suppress("DEPRECATION")
             windowManager.defaultDisplay.getMetrics(metrics)
@@ -100,11 +102,26 @@ class ScreenCaptureService : Service() {
             screenHeight = metrics.heightPixels
         }
         
-        screenDensity = metrics.densityDpi
+        // Fix pour tablettes e-ink (ONYX Boox) : densité invalide
+        screenDensity = when {
+            metrics.densityDpi > 0 -> metrics.densityDpi
+            metrics.densityDpi <= 0 -> {
+                Log.w(TAG, "Densité invalide détectée: ${metrics.densityDpi}, utilisation du fallback")
+                // Calculer densité basée sur xdpi/ydpi
+                val xdpi = if (metrics.xdpi > 0) metrics.xdpi else 160f
+                val ydpi = if (metrics.ydpi > 0) metrics.ydpi else 160f
+                ((xdpi + ydpi) / 2).toInt().coerceAtLeast(160)
+            }
+            else -> 160 // Fallback par défaut (mdpi)
+        }
+        
+        Log.d(TAG, "Métriques écran: ${screenWidth}x${screenHeight} @ ${screenDensity}dpi (original: ${metrics.densityDpi})")
         
         // Réduire la résolution pour le streaming (divisé par 2)
         screenWidth /= 2
         screenHeight /= 2
+        
+        Log.d(TAG, "Résolution streaming: ${screenWidth}x${screenHeight}")
     }
     
     private fun startCapture(resultCode: Int, data: Intent?, authToken: String, apiUrl: String) {
@@ -209,7 +226,7 @@ class ScreenCaptureService : Service() {
                 
                 override fun onMessage(message: String?) {
                     try {
-                        val json = org.json.JSONObject(message)
+                        val json = org.json.JSONObject(message ?: return)
                         when (json.getString("type")) {
                             "authenticated" -> {
                                 Log.d(TAG, "Authentifié avec succès")
@@ -274,10 +291,11 @@ class ScreenCaptureService : Service() {
                 val jpegData = bitmapToJpeg(bitmap, 60) // 60% qualité
                 val base64 = android.util.Base64.encodeToString(jpegData, android.util.Base64.NO_WRAP)
                 
-                // Envoyer en JSON avec le type frame
+                // Envoyer en JSON avec le type frame et timestamp pour la synchronisation
                 val message = org.json.JSONObject().apply {
                     put("type", "frame")
                     put("data", base64)
+                    put("timestamp", System.currentTimeMillis()) // Timestamp pour calcul de latence
                 }.toString()
                 
                 webSocketClient?.send(message)

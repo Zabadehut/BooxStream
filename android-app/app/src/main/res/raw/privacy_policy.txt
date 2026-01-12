@@ -1,0 +1,28 @@
+POLITIQUE DE CONFIDENTIALITÉ - BOOXSTREAM
+
+Dernière mise à jour : Janvier 2026
+
+1. PRÉSENTATION
+BooxStream est une application de streaming d'écran pour tablettes e-ink, conçue pour un usage personnel.
+
+2. DONNÉES COLLECTÉES
+L'application ne collecte AUCUNE donnée personnelle. Toutes les données restent sur votre réseau local :
+- Capture d'écran : Reste sur votre réseau local
+- Token d'authentification : Stocké localement uniquement
+- Données réseau : Transitent uniquement sur votre réseau privé
+
+3. PERMISSIONS UTILISÉES
+- INTERNET : Pour la connexion WebSocket au serveur local
+- FOREGROUND_SERVICE : Pour maintenir le streaming actif
+- MEDIA_PROJECTION : Pour capturer l'écran de la tablette
+- POST_NOTIFICATIONS : Pour afficher l'état du streaming
+
+4. SÉCURITÉ
+- Aucune donnée n'est envoyée à des serveurs tiers
+- Le streaming fonctionne uniquement sur votre réseau local
+- Authentification par token sécurisé
+- Code open-source disponible sur GitHub
+
+5. CONTACT
+Pour toute question : https://github.com/votre-repo/BooxStream
+

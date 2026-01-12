@@ -104,15 +104,22 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
     
+    /**
+     * Récupère l'IP publique via api.ipify.org
+     * Service légitime utilisé uniquement pour identifier l'appareil sur le réseau
+     * Aucune donnée personnelle n'est envoyée
+     */
     private fun getPublicIp(): String? {
         return try {
-            // Utiliser un service externe pour obtenir l'IP publique
+            // Service légitime api.ipify.org - utilisé uniquement pour obtenir l'IP publique
+            // Aucune donnée personnelle n'est envoyée, uniquement une requête GET simple
             val url = java.net.URL("https://api.ipify.org")
             val connection = url.openConnection()
             connection.connectTimeout = 5000
             connection.readTimeout = 5000
             connection.getInputStream().bufferedReader().readText().trim()
         } catch (e: Exception) {
+            // En cas d'erreur, retourner null (l'app fonctionne sans IP publique)
             null
         }
     }

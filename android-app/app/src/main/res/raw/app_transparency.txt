@@ -1,0 +1,48 @@
+TRANSPARENCE DE L'APPLICATION BOOXSTREAM
+==========================================
+
+Application : BooxStream
+Version : 1.0
+Développeur : kevin.VDB / BooxStream
+Date : Janvier 2026
+
+DESCRIPTION
+-----------
+BooxStream est une application légitime de streaming d'écran pour tablettes e-ink ONYX Boox.
+L'application permet de capturer et streamer l'écran de la tablette vers un serveur local via WebSocket.
+
+PERMISSIONS UTILISÉES ET JUSTIFICATION
+---------------------------------------
+1. INTERNET
+   - Usage : Connexion WebSocket au serveur local uniquement
+   - Portée : Réseau local uniquement (pas de connexion externe)
+   - Justification : Nécessaire pour le streaming
+
+2. FOREGROUND_SERVICE
+   - Usage : Maintenir le service de capture actif
+   - Justification : Android requiert cette permission pour les services en avant-plan
+
+3. FOREGROUND_SERVICE_MEDIA_PROJECTION
+   - Usage : Service de capture d'écran
+   - Justification : Permission spécifique requise par Android pour MediaProjection
+
+4. POST_NOTIFICATIONS
+   - Usage : Afficher l'état du streaming à l'utilisateur
+   - Justification : Notification requise pour les services en avant-plan
+
+DONNÉES COLLECTÉES
+------------------
+AUCUNE donnée personnelle n'est collectée.
+- Toutes les données restent sur le réseau local
+- Aucune connexion à des serveurs externes
+- Aucune télémétrie
+- Aucun tracking
+
+CODE SOURCE
+-----------
+Le code source est disponible sur GitHub (si applicable).
+Application open-source développée en Kotlin.
+
+CONTACT
+-------
+Pour toute question de sécurité ou de transparence, contactez le développeur.

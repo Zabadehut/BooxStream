@@ -1,0 +1,129 @@
+# Fichiers obsolètes à supprimer
+
+## Scripts Cloudflare (obsolètes - on n'utilise plus cloudflared sur la VM)
+- SETUP-CLOUDFLARE-TUNNEL.sh
+- SETUP-CLOUDFLARE-FILES.sh
+- SETUP-BOOXSTREAM-TUNNEL.sh
+- SETUP-BOOXSTREAM-SAME-TUNNEL.sh
+- SETUP-SYNCED-CONFIG.sh
+- CREATE-CREDENTIALS-FILE.sh
+- create-credentials.sh
+- FIX-CLOUDFLARE-COMPLETE.sh
+- FIX-CLOUDFLARE-CREDENTIALS.sh
+- FIX-CLOUDFLARE-PERMISSIONS.sh
+- FIX-SELINUX-CLOUDFLARE.sh
+- FIX-SELINUX-QUICK.sh
+- UPDATE-TUNNEL-CONFIG.sh
+- VERIFY-TUNNEL.sh
+- DISABLE-CLOUDFLARE-VM.sh
+- cloudflared-config.yml
+- cloudflared-credentials.json
+- a40eeeac-5f83-4d51-9da2-67a0c9e0e975.json
+- CREDENTIALS-TEMPLATE.json
+
+## Documentation Cloudflare obsolète
+- CLOUDFLARE-TUNNEL.md
+- CLOUDFLARE-TUNNEL-SIMPLE.md
+- CREATE-CREDENTIALS.md
+- INSTRUCTIONS-CREDENTIALS.md
+- OBTENIR-CREDENTIALS.md
+- QUICK-CREATE-CREDENTIALS.md
+- TROUVER-CREDENTIALS.md
+- FIX-TUNNEL-CREDENTIALS.md
+
+## Scripts de diagnostic obsolètes
+- CHECK-CONFIG-CONFLICTS.sh
+- DIAGNOSE-404.sh
+- DIAGNOSE-404-BOOXSTREAM.sh
+- DIAGNOSE-SERVER.sh
+- FIX-TUNNEL-CONFLICT.sh
+- RESOLVE-TUNNEL-CONFLICT.sh
+- VERIFY-GATEWAY-CONFIG.sh
+- VERIFY-TRAEFIK-CONFIG.sh
+- TEST-FINAL.sh
+- TEST-FINAL-GATEWAY.sh
+- test-booxstream.sh
+- DECODE-TOKEN.sh
+
+## Documentation obsolète/redondante
+- ARCHITECTURE.md (remplacé par ARCHITECTURE-ACTUELLE.md)
+- ARCHITECTURE-BOOXSTREAM.md
+- ARCHITECTURE-COMPARISON.md
+- ARCHITECTURE-FINAL.md
+- EXPLAIN-ROUTING.md
+- VERIFY-NO-CONFLICT.md
+- RESOLVE-CONFLICT.md
+- DEBUG-404.md
+- DEBUG-CLOUDFLARE.md
+- CHECK-SERVER-LOGS.md
+- CHECK-SERVICE.md
+- CONNECT-SERVER.md
+- TEST-SERVER.md
+- TEST-URL.md
+- VERIFY-DEPLOY.md
+- START-SERVICE.md
+- CONFIG-CNAME.md
+- CONFIG-DOMAIN.md
+- deploy-manual.md
+- DEPLOY.md (redondant avec DEPLOY-GUIDE.md)
+
+## Guides de configuration obsolètes
+- CONFIG-BOOXSTREAM-GATEWAY.md
+- CONFIG-TRAEFIK-BOOXSTREAM.md
+- CONFIG-AUTHENTIK-BOOXSTREAM.md
+- FIX-404-BOOXSTREAM.md
+- APPLY-TRAEFIK-CONFIG.md
+- APPLY-BOOXSTREAM-YML.md
+- FIX-TRAEFIK-SERVICE.md
+- FIX-BOOXSTREAM-YML.sh
+
+## Guides Android obsolètes (redondants)
+- DIAGNOSE-ANDROID-AUTH.md
+- DIAGNOSE-ANDROID-TOKEN.md
+- FIX-ANDROID-CONNECTION.md
+
+## Fichiers YAML temporaires/doublons
+- booxstream-api-public.yml
+- GATEWAY-CONFIG-EXAMPLE.yml
+
+## Scripts de déploiement obsolètes
+- deploy.ps1 (remplacé par deploy-simple.ps1)
+- deploy-prod.ps1 (redondant)
+- DEPLOY-SERVER.sh (ancien script)
+- setup-service.sh (intégré dans deploy-simple.ps1)
+- commit-config-files.ps1 (redondant)
+- deploy-cloudflare-fix.ps1 (obsolète)
+
+## Fichiers divers obsolètes
+- add-to-git.ps1
+- test-ssh.ps1
+- status.ps1
+- setup-github.ps1
+
+## Fichiers à GARDER
+
+### Racine (essentiels)
+- README.md
+- QUICKSTART.md
+- ARCHITECTURE-ACTUELLE.md (nouveau)
+- SECURITY.md
+- deploy-simple.ps1
+- backup.ps1
+- restore.ps1
+- booxstream.yml (config Traefik)
+- deploy-config.example.json
+- setup-ssh-agent.ps1
+- copy-ssh-key.ps1
+- logs.ps1
+
+### Android
+- build-apk.ps1
+- build-apk-release.ps1
+- BUILD-APK.md
+
+### Dossiers
+- android-app/ (tout)
+- web/ (tout)
+- server/ (tout - pour référence)
+- releases/ (tout)
+

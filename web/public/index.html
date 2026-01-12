@@ -3,8 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BooxStream - Gestion des hôtes</title>
+    <title>BooxStream - Streaming d'écran</title>
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,156 +25,478 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
             min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        h1 {
-            color: white;
             text-align: center;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
         
-        .card {
-            background: white;
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .host-list {
-            display: grid;
-            gap: 15px;
-        }
-        
-        .host-item {
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s;
-        }
-        
-        .host-item:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
-        
-        .host-info {
-            flex: 1;
-        }
-        
-        .host-name {
-            font-weight: bold;
-            font-size: 18px;
-            color: #333;
+        .header h1 {
+            font-size: 2rem;
             margin-bottom: 5px;
         }
         
-        .host-details {
-            font-size: 14px;
-            color: #666;
+        .header .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
         }
         
-        .host-status {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #28a745;
-            margin-right: 8px;
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
         }
         
-        .host-status.inactive {
-            background: #dc3545;
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .stat-value {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 10px;
         }
         
         .btn {
             padding: 10px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .btn-primary {
-            background: #667eea;
+            background: var(--primary);
             color: white;
         }
         
         .btn-primary:hover {
-            background: #5568d3;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
         }
         
         .btn-success {
-            background: #28a745;
+            background: var(--success);
             color: white;
         }
         
-        .btn-success:hover {
-            background: #218838;
+        .btn-danger {
+            background: var(--danger);
+            color: white;
         }
         
-        .viewer-container {
-            display: none;
-            margin-top: 20px;
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
         }
         
-        .viewer-container.active {
-            display: block;
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
         
-        #screen {
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 15px;
+        }
+        
+        .host-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+        
+        .host-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .host-item:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .host-item.active {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.15);
+        }
+        
+        .host-item.streaming {
+            border-left: 3px solid var(--success);
+        }
+        
+        .host-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .host-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+        
+        .status-dot.online {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .host-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        
+        .host-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+        }
+        
+        .host-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+        }
+        
+        .host-stat .value {
+            color: var(--text);
+            font-weight: 500;
+        }
+        
+        .viewer-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stream-container {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16/10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .stream-container img {
             max-width: 100%;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .stream-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .stream-stat {
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+        
+        .stream-stat.fps {
+            color: var(--success);
+        }
+        
+        .stream-stat.latency {
+            color: var(--warning);
+        }
+        
+        .stream-placeholder {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .stream-placeholder .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .multi-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .mini-stream {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .mini-stream img {
+            width: 100%;
+            height: auto;
+        }
+        
+        .mini-stream-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            padding: 20px 10px 10px;
+            font-size: 0.8rem;
         }
         
         .loading {
             text-align: center;
             padding: 20px;
-            color: #666;
+            color: var(--text-muted);
         }
         
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+        
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <h1>📱 BooxStream</h1>
+        <p class="subtitle">Streaming d'écran pour tablettes e-ink</p>
+    </div>
+    
     <div class="container">
-        <h1>📱 BooxStream - Gestion des hôtes</h1>
-        
-        <div class="card">
-            <h2>Hôtes disponibles</h2>
-            <div id="hostList" class="host-list">
-                <div class="loading">Chargement des hôtes...</div>
+        <div class="toolbar">
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span>Hôtes connectés:</span>
+                    <span class="stat-value" id="connectedCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>En streaming:</span>
+                    <span class="stat-value" id="streamingCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Viewers:</span>
+                    <span class="stat-value" id="viewersCount">0</span>
+                </div>
+            </div>
+            <div class="download-buttons">
+                <button class="btn btn-outline btn-sm" onclick="refreshHosts()">
+                    🔄 Actualiser
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="cleanupHosts()">
+                    🧹 Nettoyer doublons
+                </button>
+                <a href="/api/download/android" class="btn btn-success btn-sm" id="downloadAndroid" style="display:none;">
+                    📱 Télécharger APK
+                </a>
+                <a href="/api/download/windows" class="btn btn-primary btn-sm" id="downloadWindows" style="display:none;">
+                    💻 Télécharger Windows
+                </a>
             </div>
         </div>
         
-        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="alertContainer"></div>
         
-        <div id="viewerContainer" class="viewer-container card">
-            <h2>Visualisation en direct</h2>
-            <div id="viewerContent">
-                <div class="loading">Connexion au stream...</div>
+        <div class="grid">
+            <!-- Liste des hôtes -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🖥️ Hôtes disponibles</h2>
+                    <span id="hostCount" class="text-muted">0 hôtes</span>
+                </div>
+                <div class="card-body">
+                    <div id="hostList" class="host-list">
+                        <div class="loading">
+                            <span class="loading-spinner"></span>
+                            Chargement des hôtes...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Viewer principal -->
+            <div class="card viewer-panel">
+                <div class="card-header">
+                    <h2>👁️ Visualisation</h2>
+                    <div id="streamControls" style="display:none;">
+                        <button class="btn btn-danger btn-sm" onclick="stopViewing()">
+                            ⏹ Arrêter
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="viewerContent">
+                        <div class="stream-container">
+                            <div class="stream-placeholder">
+                                <div class="icon">📺</div>
+                                <p>Sélectionnez un hôte pour voir son stream</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Multi-view pour plusieurs streams -->
+                    <div id="multiViewContainer" class="multi-view" style="display:none;">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -170,52 +505,132 @@
         const API_URL = window.location.origin;
         let currentSession = null;
         let viewerWs = null;
+        let selectedHostUuid = null;
+        let hostsData = [];
+        
+        // Buffer pour reconstruction des frames
+        const frameBuffer = [];
+        const BUFFER_SIZE = 3; // Garder 3 frames d'avance
+        let lastFrameSeq = 0;
+        let frameDropped = 0;
+        
+        // Stats
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+        let currentFps = 0;
+        let latency = 0;
+
+        // Charger les téléchargements disponibles
+        async function loadDownloads() {
+            try {
+                const response = await fetch(`${API_URL}/api/downloads`);
+                const data = await response.json();
+                
+                data.downloads.forEach(dl => {
+                    if (dl.platform === 'android') {
+                        document.getElementById('downloadAndroid').style.display = 'inline-flex';
+                    } else if (dl.platform === 'windows') {
+                        document.getElementById('downloadWindows').style.display = 'inline-flex';
+                    }
+                });
+            } catch (error) {
+                console.error('Erreur chargement téléchargements:', error);
+            }
+        }
 
         // Charger la liste des hôtes
         async function loadHosts() {
             try {
                 const response = await fetch(`${API_URL}/api/hosts`);
-                const hosts = await response.json();
+                hostsData = await response.json();
                 
                 const hostList = document.getElementById('hostList');
+                document.getElementById('hostCount').textContent = `${hostsData.length} hôtes`;
                 
-                if (hosts.length === 0) {
-                    hostList.innerHTML = '<div class="loading">Aucun hôte disponible</div>';
+                // Compter les stats
+                const streaming = hostsData.filter(h => h.is_streaming).length;
+                const totalViewers = hostsData.reduce((sum, h) => sum + (h.viewers_count || 0), 0);
+                
+                document.getElementById('connectedCount').textContent = hostsData.length;
+                document.getElementById('streamingCount').textContent = streaming;
+                document.getElementById('viewersCount').textContent = totalViewers;
+                
+                if (hostsData.length === 0) {
+                    hostList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📱</div>
+                            <p>Aucun hôte disponible</p>
+                            <p style="font-size: 0.85rem; margin-top: 10px;">
+                                Installez l'application Android sur votre tablette
+                            </p>
+                        </div>
+                    `;
                     return;
                 }
                 
-                hostList.innerHTML = hosts.map(host => `
-                    <div class="host-item">
-                        <div class="host-info">
-                            <div class="host-name">
-                                <span class="host-status ${host.is_active ? '' : 'inactive'}"></span>
-                                ${host.name}
+                hostList.innerHTML = hostsData.map(host => {
+                    const isActive = selectedHostUuid === host.uuid;
+                    const lastSeen = new Date(host.last_seen);
+                    const stats = host.stats;
+                    
+                    return `
+                        <div class="host-item ${isActive ? 'active' : ''} ${host.is_streaming ? 'streaming' : ''}" 
+                             onclick="selectHost('${host.uuid}')">
+                            <div class="host-header">
+                                <div class="host-name">
+                                    <span class="status-dot ${host.is_streaming ? 'online' : ''}"></span>
+                                    ${host.name}
+                                </div>
+                                <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteHost('${host.uuid}')" title="Supprimer">
+                                    🗑️
+                                </button>
                             </div>
-                            <div class="host-details">
-                                UUID: ${host.uuid.substring(0, 8)}... | 
-                                IP: ${host.public_ip || 'Non définie'} |
-                                Dernière activité: ${new Date(host.last_seen).toLocaleString('fr-FR')}
+                            <div class="host-meta">
+                                UUID: ${host.uuid.substring(0, 8)}...<br>
+                                IP: ${host.public_ip || 'Non définie'}<br>
+                                Dernière activité: ${lastSeen.toLocaleString('fr-FR')}
                             </div>
+                            ${host.is_streaming ? `
+                                <div class="host-stats">
+                                    <div class="host-stat">
+                                        <span>👁️</span>
+                                        <span class="value">${host.viewers_count || 0} viewers</span>
+                                    </div>
+                                    ${stats ? `
+                                        <div class="host-stat">
+                                            <span>📊</span>
+                                            <span class="value">${stats.fps || 0} FPS</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
                         </div>
-                        <button class="btn btn-primary" onclick="startViewing('${host.uuid}')">
-                            Voir le stream
-                        </button>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (error) {
-                showError('Erreur lors du chargement des hôtes: ' + error.message);
+                showAlert('Erreur lors du chargement des hôtes: ' + error.message, 'danger');
             }
+        }
+
+        // Sélectionner un hôte
+        function selectHost(hostUuid) {
+            selectedHostUuid = hostUuid;
+            loadHosts(); // Rafraîchir pour mettre à jour l'état actif
+            startViewing(hostUuid);
         }
 
         // Démarrer la visualisation
         async function startViewing(hostUuid) {
             try {
+                // Fermer la connexion précédente
+                if (viewerWs) {
+                    viewerWs.close();
+                }
+                
                 // Créer une session
                 const response = await fetch(`${API_URL}/api/sessions/create`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ host_uuid: hostUuid })
                 });
 
@@ -228,16 +643,32 @@
                 currentSession = data.session;
                 
                 // Afficher le viewer
-                document.getElementById('viewerContainer').classList.add('active');
+                document.getElementById('streamControls').style.display = 'block';
                 document.getElementById('viewerContent').innerHTML = `
-                    <div class="loading">Connexion au stream...</div>
+                    <div class="stream-container">
+                        <div class="stream-overlay">
+                            <div class="stream-stat fps" id="fpsCounter">-- FPS</div>
+                            <div class="stream-stat latency" id="latencyCounter">-- ms</div>
+                        </div>
+                        ${data.session.is_streaming ? `
+                            <img id="screen" alt="Screen stream">
+                        ` : `
+                            <div class="stream-placeholder">
+                                <div class="icon">⏳</div>
+                                <p>En attente du stream...</p>
+                                <p style="font-size: 0.85rem; margin-top: 10px;">
+                                    L'hôte n'est pas encore connecté
+                                </p>
+                            </div>
+                        `}
+                    </div>
                 `;
 
                 // Se connecter au WebSocket
                 connectViewer(data.session.viewer_token);
                 
             } catch (error) {
-                showError('Erreur: ' + error.message);
+                showAlert('Erreur: ' + error.message, 'danger');
             }
         }
 
@@ -248,59 +679,195 @@
             
             viewerWs = new WebSocket(wsUrl);
             
+            // Reset stats
+            frameCount = 0;
+            lastFpsUpdate = Date.now();
+            frameDropped = 0;
+            
             viewerWs.onopen = () => {
-                // S'authentifier
-                viewerWs.send(JSON.stringify({
-                    type: 'auth',
-                    token: token
-                }));
+                viewerWs.send(JSON.stringify({ type: 'auth', token: token }));
             };
             
             viewerWs.onmessage = (event) => {
                 const message = JSON.parse(event.data);
                 
                 if (message.type === 'authenticated') {
-                    document.getElementById('viewerContent').innerHTML = `
-                        <img id="screen" alt="Screen stream">
-                    `;
-                } else if (message.type === 'frame') {
-                    const screen = document.getElementById('screen');
-                    if (screen) {
-                        screen.src = 'data:image/jpeg;base64,' + message.data;
+                    if (message.is_streaming) {
+                        document.getElementById('viewerContent').innerHTML = `
+                            <div class="stream-container">
+                                <div class="stream-overlay">
+                                    <div class="stream-stat fps" id="fpsCounter">-- FPS</div>
+                                    <div class="stream-stat latency" id="latencyCounter">-- ms</div>
+                                </div>
+                                <img id="screen" alt="Screen stream">
+                            </div>
+                        `;
                     }
+                } else if (message.type === 'frame') {
+                    handleFrame(message);
+                } else if (message.type === 'host_status') {
+                    handleHostStatus(message);
                 } else if (message.type === 'error') {
-                    showError(message.message);
+                    showAlert(message.message, 'danger');
                 }
             };
             
             viewerWs.onerror = (error) => {
-                showError('Erreur de connexion WebSocket');
+                showAlert('Erreur de connexion WebSocket', 'danger');
             };
             
             viewerWs.onclose = () => {
-                if (document.getElementById('viewerContainer').classList.contains('active')) {
-                    document.getElementById('viewerContent').innerHTML = `
-                        <div class="loading">Connexion fermée</div>
-                    `;
-                }
+                document.getElementById('streamControls').style.display = 'none';
             };
         }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
+        // Gérer les frames avec buffer
+        function handleFrame(message) {
+            const now = Date.now();
+            
+            // Calculer la latence
+            if (message.ts) {
+                latency = now - message.ts;
+                const latencyEl = document.getElementById('latencyCounter');
+                if (latencyEl) {
+                    latencyEl.textContent = `${latency} ms`;
+                }
+            }
+            
+            // Vérifier la séquence
+            if (message.seq && message.seq <= lastFrameSeq) {
+                // Frame en retard, ignorer
+                frameDropped++;
+                return;
+            }
+            
+            lastFrameSeq = message.seq || 0;
+            
+            // Afficher la frame
+            const screen = document.getElementById('screen');
+            if (screen) {
+                screen.src = 'data:image/jpeg;base64,' + message.data;
+            }
+            
+            // Mettre à jour les stats FPS
+            frameCount++;
+            if (now - lastFpsUpdate >= 1000) {
+                currentFps = frameCount;
+                frameCount = 0;
+                lastFpsUpdate = now;
+                
+                const fpsEl = document.getElementById('fpsCounter');
+                if (fpsEl) {
+                    fpsEl.textContent = `${currentFps} FPS`;
+                }
+            }
         }
 
-        // Charger les hôtes au démarrage
+        // Gérer le changement d'état d'un hôte
+        function handleHostStatus(message) {
+            if (message.is_streaming) {
+                // L'hôte vient de se connecter
+                document.getElementById('viewerContent').innerHTML = `
+                    <div class="stream-container">
+                        <div class="stream-overlay">
+                            <div class="stream-stat fps" id="fpsCounter">-- FPS</div>
+                            <div class="stream-stat latency" id="latencyCounter">-- ms</div>
+                        </div>
+                        <img id="screen" alt="Screen stream">
+                    </div>
+                `;
+            } else {
+                // L'hôte s'est déconnecté
+                document.getElementById('viewerContent').innerHTML = `
+                    <div class="stream-container">
+                        <div class="stream-placeholder">
+                            <div class="icon">📴</div>
+                            <p>L'hôte s'est déconnecté</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Rafraîchir la liste
+            loadHosts();
+        }
+
+        // Arrêter la visualisation
+        function stopViewing() {
+            if (viewerWs) {
+                viewerWs.close();
+                viewerWs = null;
+            }
+            
+            selectedHostUuid = null;
+            currentSession = null;
+            
+            document.getElementById('streamControls').style.display = 'none';
+            document.getElementById('viewerContent').innerHTML = `
+                <div class="stream-container">
+                    <div class="stream-placeholder">
+                        <div class="icon">📺</div>
+                        <p>Sélectionnez un hôte pour voir son stream</p>
+                    </div>
+                </div>
+            `;
+            
+            loadHosts();
+        }
+
+        // Supprimer un hôte
+        async function deleteHost(uuid) {
+            if (!confirm('Supprimer cet hôte ?')) return;
+            
+            try {
+                await fetch(`${API_URL}/api/hosts/${uuid}`, { method: 'DELETE' });
+                showAlert('Hôte supprimé', 'success');
+                loadHosts();
+            } catch (error) {
+                showAlert('Erreur: ' + error.message, 'danger');
+            }
+        }
+
+        // Nettoyer les doublons
+        async function cleanupHosts() {
+            try {
+                const response = await fetch(`${API_URL}/api/hosts/cleanup`, { method: 'POST' });
+                const data = await response.json();
+                showAlert(`${data.deactivated} hôtes en double désactivés`, 'success');
+                loadHosts();
+            } catch (error) {
+                showAlert('Erreur: ' + error.message, 'danger');
+            }
+        }
+
+        // Rafraîchir les hôtes
+        function refreshHosts() {
+            loadHosts();
+            showAlert('Liste actualisée', 'success');
+        }
+
+        // Afficher une alerte
+        function showAlert(message, type = 'danger') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <span>${type === 'success' ? '✅' : '❌'}</span>
+                <span>${message}</span>
+            `;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
+        }
+
+        // Initialisation
+        loadDownloads();
         loadHosts();
         
-        // Rafraîchir toutes les 10 secondes
-        setInterval(loadHosts, 10000);
+        // Rafraîchir toutes les 5 secondes
+        setInterval(loadHosts, 5000);
     </script>
 </body>
 </html>
-

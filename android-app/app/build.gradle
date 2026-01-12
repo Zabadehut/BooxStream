@@ -15,10 +15,41 @@ android {
         versionName "1.0"
     }
 
+    // Configuration de signature (keystore)
+    signingConfigs {
+        release {
+            // Utiliser des variables d'environnement pour la sécurité
+            def keystoreFile = System.getenv("BOOXSTREAM_KEYSTORE_FILE")
+            if (keystoreFile) {
+                // Si c'est un chemin absolu (Windows: C:\... ou Unix: /...), l'utiliser tel quel
+                // Sinon, le résoudre depuis le répertoire parent (android-app)
+                def keystorePath = (keystoreFile.startsWith("/") || keystoreFile.matches("^[A-Za-z]:.*")) 
+                    ? file(keystoreFile) 
+                    : file("../${keystoreFile}")
+                storeFile keystorePath
+            } else {
+                // Chemin par défaut : un niveau au-dessus du répertoire app
+                storeFile file("../booxstream-release.keystore")
+            }
+            storePassword System.getenv("BOOXSTREAM_KEYSTORE_PASSWORD") ?: "changeme"
+            keyAlias System.getenv("BOOXSTREAM_KEY_ALIAS") ?: "booxstream"
+            keyPassword System.getenv("BOOXSTREAM_KEY_PASSWORD") ?: "changeme"
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
+            // Activer la minification et l'obfuscation (important pour la sécurité)
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            // Utiliser la signature de production
+            signingConfig signingConfigs.release
+        }
+        debug {
+            // Mode debug : pas de minification
+            minifyEnabled false
         }
     }
     compileOptions {
